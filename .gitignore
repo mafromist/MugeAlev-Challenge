@@ -3,3 +3,6 @@ build
 Move.lock
 .DS_Store*
 .vscode
+package-lock.json
+dist
+.env
