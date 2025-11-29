@@ -1,7 +1,7 @@
 module challenge::marketplace;
 
 use challenge::hero::Hero;
-use sui::coin::{Self, Coin};
+use sui::coin::Coin;
 use sui::event;
 use sui::sui::SUI;
 
@@ -44,32 +44,20 @@ public struct HeroBought has copy, drop {
 // ========= FUNCTIONS =========
 
 fun init(ctx: &mut TxContext) {
-    // NOTE: The init function runs once when the module is published
-    // TODO: Initialize the module by creating AdminCap
-    // Hints:
-    // Create AdminCap id with object::new(ctx)
-
     let admin_cap = AdminCap {
         id: object::new(ctx),
     };
-    // TODO: Transfer it to the module publisher (ctx.sender()) using transfer::public_transfer() function
 
     transfer::public_transfer(admin_cap, ctx.sender());
 }
 
 public fun list_hero(nft: Hero, price: u64, ctx: &mut TxContext) {
-    // TODO: Create a list_hero object for marketplace
-    // Hints:
-    // - Use object::new(ctx) for unique ID
-    // - Set nft, price, and seller (ctx.sender()) fields
-
     let list_hero = ListHero {
         id: object::new(ctx),
         nft,
         price,
         seller: ctx.sender(),
     };
-    // TODO: Emit HeroListed event with listing details (Don't forget to use object::id(&list_hero) )
 
     event::emit(HeroListed {
         list_hero_id: object::id(&list_hero),
@@ -77,7 +65,6 @@ public fun list_hero(nft: Hero, price: u64, ctx: &mut TxContext) {
         seller: ctx.sender(),
         timestamp: ctx.epoch_timestamp_ms(),
     });
-    // TODO: Use transfer::share_object() to make it publicly tradeable
     transfer::share_object(list_hero);
 }
 
@@ -85,7 +72,7 @@ public fun list_hero(nft: Hero, price: u64, ctx: &mut TxContext) {
 public fun buy_hero(list_hero: ListHero, coin: Coin<SUI>, ctx: &mut TxContext) {
     let ListHero { id, nft, price, seller } = list_hero;
 
-    assert!(coin.value() > price, `EInvalidPayment`);
+    assert!(coin.value() == price, `EInvalidPayment`);
 
     transfer::public_transfer(coin, seller);
 
@@ -104,9 +91,17 @@ public fun buy_hero(list_hero: ListHero, coin: Coin<SUI>, ctx: &mut TxContext) {
 
 // ========= ADMIN FUNCTIONS =========
 
-public fun delist(_: &AdminCap, list_hero: ListHero) {}
+public fun delist(_: &AdminCap, list_hero: ListHero) {
+    let ListHero { id, nft, price: _, seller } = list_hero;
 
-public fun change_the_price(_: &AdminCap, list_hero: &mut ListHero, new_price: u64) {}
+    transfer::public_transfer(nft, seller);
+
+    object::delete(id);
+}
+
+public fun change_the_price(_: &AdminCap, list_hero: &mut ListHero, new_price: u64) {
+    list_hero.price = new_price;
+}
 
 // ========= GETTER FUNCTIONS =========
 
