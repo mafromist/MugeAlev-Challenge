@@ -1,13 +1,5 @@
 import { useSuiClientQueries } from "@mysten/dapp-kit";
-import {
-  Flex,
-  Heading,
-  Text,
-  Card,
-  Badge,
-  Grid,
-  Strong,
-} from "@radix-ui/themes";
+import { Flex, Heading, Text, Card, Badge, Grid } from "@radix-ui/themes";
 import { ClockIcon } from "@radix-ui/react-icons";
 import { useNetworkVariable } from "../networkConfig";
 
