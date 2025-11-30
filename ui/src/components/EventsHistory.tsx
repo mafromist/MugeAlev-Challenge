@@ -55,6 +55,18 @@ export default function EventsHistory() {
         queryKey: ["queryEvents", packageId, "ArenaCompleted"],
         enabled: !!packageId,
       },
+      {
+        method: "queryEvents",
+        params: {
+          query: {
+            MoveEventType: `${packageId}::marketplace::HeroDelisted`,
+          },
+          limit: 20,
+          order: "descending",
+        },
+        queryKey: ["queryEvents", packageId, "HeroDelisted"],
+        enabled: !!packageId,
+      },
     ],
   });
 
@@ -63,6 +75,7 @@ export default function EventsHistory() {
     { data: boughtEvents, isPending: isBoughtPending },
     { data: battleCreatedEvents, isPending: isBattleCreatedPending },
     { data: battleCompletedEvents, isPending: isBattleCompletedPending },
+    { data: delistEvents, isPending: isDelistPending },
   ] = eventQueries;
 
   const formatTimestamp = (timestamp: string) => {
@@ -81,7 +94,8 @@ export default function EventsHistory() {
     isListedPending ||
     isBoughtPending ||
     isBattleCreatedPending ||
-    isBattleCompletedPending
+    isBattleCompletedPending ||
+    isDelistPending
   ) {
     return (
       <Card>
@@ -107,6 +121,10 @@ export default function EventsHistory() {
       ...event,
       type: "battle_completed" as const,
     })),
+    ...(delistEvents?.data || []).map((event) => ({
+      ...event,
+      type: "delisted" as const,
+    })),
   ].sort((a, b) => Number(b.timestampMs) - Number(a.timestampMs));
 
   return (
@@ -121,7 +139,7 @@ export default function EventsHistory() {
         <Grid columns="1" gap="3">
           {allEvents.map((event, index) => {
             const eventData = event.parsedJson as any;
-
+            console.log("Event Data:", eventData);
             return (
               <Card
                 key={`${event.id.txDigest}-${index}`}
@@ -131,23 +149,27 @@ export default function EventsHistory() {
                   <Flex align="center" gap="3">
                     <Badge
                       color={
-                        event.type === "listed"
-                          ? "blue"
-                          : event.type === "bought"
-                            ? "green"
-                            : event.type === "battle_created"
-                              ? "orange"
-                              : "red"
+                        event.type === "delisted"
+                          ? "red"
+                          : event.type === "listed"
+                            ? "blue"
+                            : event.type === "bought"
+                              ? "green"
+                              : event.type === "battle_created"
+                                ? "orange"
+                                : "red"
                       }
                       size="2"
                     >
                       {event.type === "listed"
                         ? "Hero Listed"
-                        : event.type === "bought"
-                          ? "Hero Bought"
-                          : event.type === "battle_created"
-                            ? "Arena Created"
-                            : "Battle Completed"}
+                        : event.type === "delisted" // ✅ Added delist case
+                          ? "Hero Delisted"
+                          : event.type === "bought"
+                            ? "Hero Bought"
+                            : event.type === "battle_created"
+                              ? "Arena Created"
+                              : "Battle Completed"}
                     </Badge>
                     <Text size="3" color="gray">
                       {formatTimestamp(event.timestampMs!)}
@@ -214,6 +236,20 @@ export default function EventsHistory() {
                         <Text size="3">
                           <strong>💀 Loser:</strong> ...
                           {eventData.loser_hero_id.slice(-8)}
+                        </Text>
+                      </>
+                    )}
+                    {event.type === "delisted" && (
+                      <>
+                        <Text size="3">
+                          <strong>🛑 Hero Delisted</strong>
+                        </Text>
+                        <Text
+                          size="3"
+                          color="gray"
+                          style={{ fontFamily: "monospace" }}
+                        >
+                          ID: {eventData.list_hero_id.slice(0, 8)}...
                         </Text>
                       </>
                     )}

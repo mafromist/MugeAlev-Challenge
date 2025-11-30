@@ -41,6 +41,12 @@ public struct HeroBought has copy, drop {
     timestamp: u64,
 }
 
+public struct HeroDelisted has copy, drop {
+    list_hero_id: ID,
+    seller: address,
+    timestamp: u64,
+}
+
 // ========= FUNCTIONS =========
 
 fun init(ctx: &mut TxContext) {
@@ -91,8 +97,14 @@ public fun buy_hero(list_hero: ListHero, coin: Coin<SUI>, ctx: &mut TxContext) {
 
 // ========= ADMIN FUNCTIONS =========
 
-public fun delist(_: &AdminCap, list_hero: ListHero) {
+public fun delist(_: &AdminCap, list_hero: ListHero, ctx: &mut TxContext) {
     let ListHero { id, nft, price: _, seller } = list_hero;
+
+    event::emit(HeroDelisted {
+        list_hero_id: id.to_inner(),
+        seller,
+        timestamp: ctx.epoch_timestamp_ms(),
+    });
 
     transfer::public_transfer(nft, seller);
 

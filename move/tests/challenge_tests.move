@@ -4,7 +4,15 @@ module challenge::arena_tests;
 
 use challenge::arena::{Self, Arena, ArenaCreated, ArenaCompleted};
 use challenge::hero::{Self, Hero, HeroMetadata};
-use challenge::marketplace::{Self, ListHero, AdminCap, EInvalidPayment, HeroListed, HeroBought};
+use challenge::marketplace::{
+    Self,
+    ListHero,
+    AdminCap,
+    EInvalidPayment,
+    HeroListed,
+    HeroBought,
+    HeroDelisted
+};
 use sui::coin;
 use sui::sui::SUI;
 use sui::test_scenario::{Self as ts, next_tx};
@@ -299,8 +307,8 @@ fun test_delist_hero() {
     // Create and list a hero
     {
         hero::create_hero(
-            b"Ahmet".to_string(),
-            b"https://example.com/ahmet.png".to_string(),
+            b"Muge".to_string(),
+            b"https://example.com/muge.png".to_string(),
             7200,
             scenario.ctx(),
         );
@@ -320,7 +328,7 @@ fun test_delist_hero() {
         let admin_cap = ts::take_from_sender<AdminCap>(&scenario);
         let list_hero = ts::take_shared<ListHero>(&scenario);
 
-        marketplace::delist(&admin_cap, list_hero);
+        marketplace::delist(&admin_cap, list_hero, scenario.ctx());
 
         ts::return_to_sender(&scenario, admin_cap);
     };
@@ -330,9 +338,10 @@ fun test_delist_hero() {
     // Verify hero was returned to seller
     assert!(ts::has_most_recent_for_sender<Hero>(&scenario), EHeroNotTransferred);
 
+    assert!(sui::event::events_by_type<HeroDelisted>().length() == 1, EDidNotEmitEvent);
     {
         let hero = ts::take_from_sender<Hero>(&scenario);
-        assert!(hero::hero_name(&hero) == b"Ahmet".to_string(), EHeroNameMismatch);
+        assert!(hero::hero_name(&hero) == b"Muge".to_string(), EHeroNameMismatch);
         ts::return_to_sender(&scenario, hero);
     };
 
