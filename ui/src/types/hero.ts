@@ -25,17 +25,24 @@ export interface HeroListedEvent {
   timestamp: string;
 }
 
+export interface HeroBoughtEvent {
+  id: string;
+  price: string;
+  buyer: string;
+  seller: string;
+  timestamp: string;
+}
+
 export interface HeroDelistedEvent {
   id: string;
   seller: string;
   timestamp: string;
 }
 
-export interface HeroBoughtEvent {
+export interface HeroPriceChangedEvent {
   id: string;
-  price: string;
-  buyer: string;
-  seller: string;
+  old_price: string;
+  new_price: string;
   timestamp: string;
 }
 

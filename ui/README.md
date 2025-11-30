@@ -26,6 +26,10 @@ for challenge finalization.
     ArenaCompleted events
   - **Real-time Updates**: Automatic UI refresh after each transaction
 
+### Addition to Base Repository
+
+- **Event History**: Track all HeroPriceChanged and HeroDelisted events
+
 ### Architecture
 
 ```

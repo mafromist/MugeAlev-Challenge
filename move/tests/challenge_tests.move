@@ -11,7 +11,8 @@ use challenge::marketplace::{
     EInvalidPayment,
     HeroListed,
     HeroBought,
-    HeroDelisted
+    HeroDelisted,
+    HeroPriceChanged
 };
 use sui::coin;
 use sui::sui::SUI;
@@ -332,13 +333,13 @@ fun test_delist_hero() {
 
         ts::return_to_sender(&scenario, admin_cap);
     };
+    assert!(sui::event::events_by_type<HeroDelisted>().length() == 1, EDidNotEmitEvent);
 
     next_tx(&mut scenario, SENDER);
 
     // Verify hero was returned to seller
     assert!(ts::has_most_recent_for_sender<Hero>(&scenario), EHeroNotTransferred);
 
-    assert!(sui::event::events_by_type<HeroDelisted>().length() == 1, EDidNotEmitEvent);
     {
         let hero = ts::take_from_sender<Hero>(&scenario);
         assert!(hero::hero_name(&hero) == b"Muge".to_string(), EHeroNameMismatch);
@@ -362,8 +363,8 @@ fun test_change_the_price() {
     // Create and list a hero
     {
         hero::create_hero(
-            b"Serkan".to_string(),
-            b"https://example.com/serkan.png".to_string(),
+            b"Alev".to_string(),
+            b"https://example.com/alev.png".to_string(),
             6800,
             scenario.ctx(),
         );
@@ -384,12 +385,12 @@ fun test_change_the_price() {
         let admin_cap = ts::take_from_sender<AdminCap>(&scenario);
         let mut list_hero = ts::take_shared<ListHero>(&scenario);
 
-        marketplace::change_the_price(&admin_cap, &mut list_hero, new_price);
+        marketplace::change_the_price(&admin_cap, &mut list_hero, new_price, scenario.ctx());
 
         ts::return_shared(list_hero);
         ts::return_to_sender(&scenario, admin_cap);
     };
-
+    assert!(sui::event::events_by_type<HeroPriceChanged>().length() == 1, EDidNotEmitEvent);
     next_tx(&mut scenario, SENDER);
     {
         let list_hero = ts::take_shared<ListHero>(&scenario);

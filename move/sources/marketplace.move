@@ -47,6 +47,13 @@ public struct HeroDelisted has copy, drop {
     timestamp: u64,
 }
 
+public struct HeroPriceChanged has copy, drop {
+    list_hero_id: ID,
+    old_price: u64,
+    new_price: u64,
+    timestamp: u64,
+}
+
 // ========= FUNCTIONS =========
 
 fun init(ctx: &mut TxContext) {
@@ -111,8 +118,21 @@ public fun delist(_: &AdminCap, list_hero: ListHero, ctx: &mut TxContext) {
     object::delete(id);
 }
 
-public fun change_the_price(_: &AdminCap, list_hero: &mut ListHero, new_price: u64) {
+public fun change_the_price(
+    _: &AdminCap,
+    list_hero: &mut ListHero,
+    new_price: u64,
+    ctx: &mut TxContext,
+) {
+    let old_price = list_hero.price;
     list_hero.price = new_price;
+
+    event::emit(HeroPriceChanged {
+        list_hero_id: object::id(list_hero),
+        old_price,
+        new_price,
+        timestamp: ctx.epoch_timestamp_ms(),
+    });
 }
 
 // ========= GETTER FUNCTIONS =========

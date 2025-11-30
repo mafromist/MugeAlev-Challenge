@@ -1,5 +1,14 @@
 import { useSuiClientQueries } from "@mysten/dapp-kit";
-import { Flex, Heading, Text, Card, Badge, Grid } from "@radix-ui/themes";
+import {
+  Flex,
+  Heading,
+  Text,
+  Card,
+  Badge,
+  Grid,
+  Strong,
+} from "@radix-ui/themes";
+import { ClockIcon } from "@radix-ui/react-icons";
 import { useNetworkVariable } from "../networkConfig";
 
 export default function EventsHistory() {
@@ -67,6 +76,18 @@ export default function EventsHistory() {
         queryKey: ["queryEvents", packageId, "HeroDelisted"],
         enabled: !!packageId,
       },
+      {
+        method: "queryEvents",
+        params: {
+          query: {
+            MoveEventType: `${packageId}::marketplace::HeroPriceChanged`,
+          },
+          limit: 20,
+          order: "descending",
+        },
+        queryKey: ["queryEvents", packageId, "HeroPriceChanged"],
+        enabled: !!packageId,
+      },
     ],
   });
 
@@ -76,13 +97,19 @@ export default function EventsHistory() {
     { data: battleCreatedEvents, isPending: isBattleCreatedPending },
     { data: battleCompletedEvents, isPending: isBattleCompletedPending },
     { data: delistEvents, isPending: isDelistPending },
+    { data: priceChangeEvents, isPending: isPriceChangePending },
   ] = eventQueries;
 
   const formatTimestamp = (timestamp: string) => {
     return new Date(Number(timestamp)).toLocaleString();
   };
 
+  // const formatAddress = (address: string) => {
+  //   return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  // };
+
   const formatAddress = (address: string) => {
+    if (!address) return "N/A";
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
@@ -95,7 +122,8 @@ export default function EventsHistory() {
     isBoughtPending ||
     isBattleCreatedPending ||
     isBattleCompletedPending ||
-    isDelistPending
+    isDelistPending ||
+    isPriceChangePending
   ) {
     return (
       <Card>
@@ -125,6 +153,10 @@ export default function EventsHistory() {
       ...event,
       type: "delisted" as const,
     })),
+    ...(priceChangeEvents?.data || []).map((event) => ({
+      ...event,
+      type: "price_changed" as const,
+    })),
   ].sort((a, b) => Number(b.timestampMs) - Number(a.timestampMs));
 
   return (
@@ -146,7 +178,7 @@ export default function EventsHistory() {
                 style={{ padding: "16px" }}
               >
                 <Flex direction="column" gap="2">
-                  <Flex align="center" gap="3">
+                  <Flex align="center" gap="3" justify="between">
                     <Badge
                       color={
                         event.type === "delisted"
@@ -155,7 +187,8 @@ export default function EventsHistory() {
                             ? "blue"
                             : event.type === "bought"
                               ? "green"
-                              : event.type === "battle_created"
+                              : event.type === "battle_created" ||
+                                  event.type === "price_changed"
                                 ? "orange"
                                 : "red"
                       }
@@ -169,11 +202,20 @@ export default function EventsHistory() {
                             ? "Hero Bought"
                             : event.type === "battle_created"
                               ? "Arena Created"
-                              : "Battle Completed"}
+                              : event.type === "price_changed"
+                                ? "Hero Price Changed"
+                                : "Battle Completed"}
                     </Badge>
-                    <Text size="3" color="gray">
-                      {formatTimestamp(event.timestampMs!)}
-                    </Text>
+                    <Flex direction="row" align="center" gap="1">
+                      <Text size="1" weight="bold">
+                        <Flex direction="row" align="center" gap="1">
+                          <ClockIcon /> Occurred:
+                        </Flex>
+                      </Text>
+                      <Text size="2">
+                        {formatTimestamp(event.timestampMs!)}
+                      </Text>
+                    </Flex>
                   </Flex>
 
                   <Flex align="center" gap="4" wrap="wrap">
@@ -250,6 +292,28 @@ export default function EventsHistory() {
                           style={{ fontFamily: "monospace" }}
                         >
                           ID: {eventData.list_hero_id.slice(0, 8)}...
+                        </Text>
+                      </>
+                    )}
+                    {event.type === "price_changed" && (
+                      <>
+                        <Text size="3">
+                          <strong>💲 Price Updated</strong>
+                        </Text>
+                        <Text size="3">
+                          <strong>Old Price:</strong>{" "}
+                          {formatPrice(eventData.old_price)} SUI
+                        </Text>
+                        <Text size="3">
+                          <strong>New Price:</strong>{" "}
+                          {formatPrice(eventData.new_price)} SUI
+                        </Text>
+                        <Text
+                          size="3"
+                          color="gray"
+                          style={{ fontFamily: "monospace" }}
+                        >
+                          ID: {eventData.list_hero_id?.slice(0, 8) || "N/A"}...
                         </Text>
                       </>
                     )}
